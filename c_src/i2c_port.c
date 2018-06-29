@@ -37,6 +37,8 @@
 #define debug(...)
 #endif
 
+#define ECC508_CMDGRP_COUNT_MAX 155
+
 struct i2c_info
 {
     int fd;
@@ -132,11 +134,11 @@ static void i2c_handle_request(const char *req, void *cookie)
     if (strcmp(cmd, "read") == 0) {
         long int len;
         if (ei_decode_long(req, &req_index, &len) < 0 ||
-                len < 1 ||
-                len > I2C_SMBUS_BLOCK_MAX)
-            errx(EXIT_FAILURE, "read amount: min=1, max=%d", I2C_SMBUS_BLOCK_MAX);
+                len < 1 || 
+                len > ECC508_CMDGRP_COUNT_MAX)
+            errx(EXIT_FAILURE, "read amount: min=1, max=%d");
 
-        char data[I2C_SMBUS_BLOCK_MAX];
+        char data[ECC508_CMDGRP_COUNT_MAX];
 
         if (i2c_transfer(i2c, 0, 0, data, len))
             ei_encode_binary(resp, &resp_index, data,len);
@@ -146,16 +148,16 @@ static void i2c_handle_request(const char *req, void *cookie)
             ei_encode_atom(resp, &resp_index, "i2c_read_failed");
         }
     } else if (strcmp(cmd, "write") == 0) {
-        char data[I2C_SMBUS_BLOCK_MAX];
+        char data[ECC508_CMDGRP_COUNT_MAX];
         int len;
         int type;
         long llen;
         if (ei_get_type(req, &req_index, &type, &len) < 0 ||
                 type != ERL_BINARY_EXT ||
                 len < 1 ||
-                len > I2C_SMBUS_BLOCK_MAX ||
+                len > ECC508_CMDGRP_COUNT_MAX ||
                 ei_decode_binary(req, &req_index, &data, &llen) < 0)
-            errx(EXIT_FAILURE, "write: need a binary between 1 and %d bytes", I2C_SMBUS_BLOCK_MAX);
+            errx(EXIT_FAILURE, "write: need a binary between 1 and %d bytes", ECC508_CMDGRP_COUNT_MAX);
 
         if (i2c_transfer(i2c, data, len, 0, 0))
             ei_encode_atom(resp, &resp_index, "ok");
@@ -165,8 +167,8 @@ static void i2c_handle_request(const char *req, void *cookie)
             ei_encode_atom(resp, &resp_index, "i2c_write_failed");
         }
     } else if (strcmp(cmd, "wrrd") == 0) {
-        char write_data[I2C_SMBUS_BLOCK_MAX];
-        char read_data[I2C_SMBUS_BLOCK_MAX];
+        char write_data[ECC508_CMDGRP_COUNT_MAX];
+        char read_data[ECC508_CMDGRP_COUNT_MAX];
         int write_len;
         long int read_len;
         int type;
@@ -179,13 +181,13 @@ static void i2c_handle_request(const char *req, void *cookie)
         if (ei_get_type(req, &req_index, &type, &write_len) < 0 ||
                 type != ERL_BINARY_EXT ||
                 write_len < 1 ||
-                write_len > I2C_SMBUS_BLOCK_MAX ||
+                write_len > ECC508_CMDGRP_COUNT_MAX ||
                 ei_decode_binary(req, &req_index, &write_data, &llen) < 0)
-            errx(EXIT_FAILURE, "wrrd: need a binary between 1 and %d bytes", I2C_SMBUS_BLOCK_MAX);
+            errx(EXIT_FAILURE, "wrrd: need a binary between 1 and %d bytes", ECC508_CMDGRP_COUNT_MAX);
         if (ei_decode_long(req, &req_index, &read_len) < 0 ||
                 read_len < 1 ||
-                read_len > I2C_SMBUS_BLOCK_MAX)
-            errx(EXIT_FAILURE, "wrrd: read amount: min=1, max=%d", I2C_SMBUS_BLOCK_MAX);
+                read_len > ECC508_CMDGRP_COUNT_MAX)
+            errx(EXIT_FAILURE, "wrrd: read amount: min=1, max=%d", ECC508_CMDGRP_COUNT_MAX);
 
         if (i2c_transfer(i2c, write_data, write_len, read_data, read_len))
             ei_encode_binary(resp, &resp_index, read_data, read_len);
